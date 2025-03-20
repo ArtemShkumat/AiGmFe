@@ -1,25 +1,23 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme/theme';
+import TitlePage from './pages/TitlePage';
+import NewGameFlowPage from './pages/NewGameFlowPage';
+import GamePage from './pages/GamePage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/" element={<TitlePage />} />
+          <Route path="/new-game" element={<NewGameFlowPage />} />
+          <Route path="/game/:gameId" element={<GamePage />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
