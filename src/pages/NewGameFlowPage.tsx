@@ -112,7 +112,7 @@ const NewGameFlowPage: React.FC = () => {
     try {
       const newGameId = await api.createGame({
         scenarioId: selectedScenario,
-        gamePreferences
+        Preferences: gamePreferences
       });
       setGameId(newGameId);
       setActiveStep(1); // Move to character creation step

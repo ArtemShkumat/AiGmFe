@@ -20,7 +20,7 @@ export interface Game {
 // Request interfaces
 export interface CreateGameRequest {
   scenarioId: string;
-  gamePreferences: GamePreferences;
+  Preferences: GamePreferences;
 }
 
 export interface CreateCharacterRequest {
