@@ -17,6 +17,11 @@ export interface Game {
   name: string;
 }
 
+// Define PromptType enum to match backend
+export enum PromptType {
+  DM = 0
+}
+
 // Request interfaces
 export interface CreateGameRequest {
   scenarioId: string;
@@ -31,7 +36,7 @@ export interface CreateCharacterRequest {
 export interface UserInputRequest {
   gameId: string;
   userInput: string;
-  promptType: "DM"; // Could be expanded in the future
+  promptType: PromptType;
 }
 
 // Game preference options

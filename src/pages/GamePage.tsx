@@ -18,7 +18,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../api/api';
-import { Message } from '../types';
+import { Message, PromptType } from '../types';
 
 const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -91,7 +91,7 @@ const GamePage: React.FC = () => {
       const response = await api.sendUserInput({
         gameId,
         userInput: trimmedInput,
-        promptType: 'DM'
+        promptType: PromptType.DM
       });
       
       // Add DM response to chat

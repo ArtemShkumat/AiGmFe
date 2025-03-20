@@ -86,7 +86,13 @@ const api = {
   // Send user input and get response
   sendUserInput: async (request: UserInputRequest): Promise<string> => {
     try {
-      const response = await axios.post<string>(`${API_URL}/input`, request);
+      // Construct the request with proper property casing
+      const formattedRequest = {
+        GameId: request.gameId,
+        UserInput: request.userInput,
+        PromptType: request.promptType
+      };
+      const response = await axios.post<string>(`${API_URL}/input`, formattedRequest);
       return response.data;
     } catch (error) {
       handleApiError(error);
