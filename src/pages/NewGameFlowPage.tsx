@@ -15,16 +15,16 @@ import {
   MenuItem,
   TextField,
   FormHelperText,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   CircularProgress,
   Snackbar,
   Alert,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Grid,
+  Card,
+  CardContent
 } from '@mui/material';
 import api from '../api/api';
-import { Scenario, GamePreferences } from '../types';
+import { Scenario, GamePreferences, GameSetting } from '../types';
 
 const NewGameFlowPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ const NewGameFlowPage: React.FC = () => {
   const [gamePreferences, setGamePreferences] = useState<GamePreferences>({
     tone: 'neutral',
     complexity: 'medium',
-    ageAppropriateness: 'mature'
+    ageAppropriateness: 'teen'
   });
   const [characterDescription, setCharacterDescription] = useState('');
   const [gameId, setGameId] = useState<string | null>(null);
@@ -86,7 +86,7 @@ const NewGameFlowPage: React.FC = () => {
   }, []);
   
   const handlePreferenceChange = useCallback((
-    event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = event.target;
     if (name) {
@@ -168,10 +168,17 @@ const NewGameFlowPage: React.FC = () => {
     setOpenSnackbar(false);
   }, []);
   
+  // Get the selected scenario details
+  const getSelectedScenarioDetails = () => {
+    return scenarios.find(scenario => scenario.scenarioId === selectedScenario);
+  };
+  
   // Step content
   const getStepContent = (step: number) => {
     switch (step) {
       case 0:
+        const selectedScenarioDetails = getSelectedScenarioDetails();
+        
         return (
           <Box sx={{ mt: 4 }}>
             <Typography variant="h5" gutterBottom>
@@ -189,58 +196,85 @@ const NewGameFlowPage: React.FC = () => {
               >
                 {scenarios.map((scenario) => (
                   <MenuItem key={scenario.scenarioId} value={scenario.scenarioId}>
-                    {scenario.name}
+                    {scenario.scenarioId}
                   </MenuItem>
                 ))}
               </Select>
               <FormHelperText>Select the world setting for your adventure</FormHelperText>
             </FormControl>
             
+            {selectedScenarioDetails?.gameSetting && (
+              <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Scenario Details
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2">Name:</Typography>
+                      <Typography variant="body2">{selectedScenarioDetails.name}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2">Genre:</Typography>
+                      <Typography variant="body2">{selectedScenarioDetails.gameSetting.genre}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="subtitle2">Theme:</Typography>
+                      <Typography variant="body2">{selectedScenarioDetails.gameSetting.theme}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2">Description:</Typography>
+                      <Typography variant="body2">{selectedScenarioDetails.gameSetting.description}</Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            )}
+            
             <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
               Game Preferences
             </Typography>
             
-            <FormControl component="fieldset" sx={{ mb: 2 }}>
-              <Typography variant="subtitle1">Tone</Typography>
-              <RadioGroup
-                row
-                name="tone"
-                value={gamePreferences.tone}
-                onChange={handlePreferenceChange}
-              >
-                <FormControlLabel value="light" control={<Radio />} label="Light" />
-                <FormControlLabel value="neutral" control={<Radio />} label="Neutral" />
-                <FormControlLabel value="dark" control={<Radio />} label="Dark" />
-              </RadioGroup>
-            </FormControl>
-            
-            <FormControl component="fieldset" sx={{ mb: 2 }}>
-              <Typography variant="subtitle1">Complexity</Typography>
-              <RadioGroup
-                row
-                name="complexity"
-                value={gamePreferences.complexity}
-                onChange={handlePreferenceChange}
-              >
-                <FormControlLabel value="low" control={<Radio />} label="Low" />
-                <FormControlLabel value="medium" control={<Radio />} label="Medium" />
-                <FormControlLabel value="high" control={<Radio />} label="High" />
-              </RadioGroup>
-            </FormControl>
-            
-            <FormControl component="fieldset" sx={{ mb: 4 }}>
-              <Typography variant="subtitle1">Age Appropriateness</Typography>
-              <RadioGroup
-                row
-                name="ageAppropriateness"
-                value={gamePreferences.ageAppropriateness}
-                onChange={handlePreferenceChange}
-              >
-                <FormControlLabel value="child" control={<Radio />} label="Child Friendly" />
-                <FormControlLabel value="teen" control={<Radio />} label="Teen" />
-                <FormControlLabel value="mature" control={<Radio />} label="Mature" />
-              </RadioGroup>
-            </FormControl>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Tone"
+                  name="tone"
+                  value={gamePreferences.tone}
+                  onChange={handlePreferenceChange}
+                  variant="outlined"
+                  helperText="e.g., light, neutral, dark"
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Complexity"
+                  name="complexity"
+                  value={gamePreferences.complexity}
+                  onChange={handlePreferenceChange}
+                  variant="outlined"
+                  helperText="e.g., low, medium, high"
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Age Appropriateness"
+                  name="ageAppropriateness"
+                  value={gamePreferences.ageAppropriateness}
+                  onChange={handlePreferenceChange}
+                  variant="outlined"
+                  helperText="e.g., child, teen, mature"
+                  sx={{ mb: 4 }}
+                />
+              </Grid>
+            </Grid>
             
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
               <Button onClick={handleCancel} color="inherit">

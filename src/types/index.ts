@@ -2,6 +2,14 @@
 export interface Scenario {
   scenarioId: string;
   name: string;
+  gameSetting?: GameSetting;
+  gamePreferences?: GamePreferences;
+}
+
+export interface GameSetting {
+  genre: string;
+  theme: string;
+  description: string;
 }
 
 export interface Game {
@@ -28,9 +36,9 @@ export interface UserInputRequest {
 
 // Game preference options
 export interface GamePreferences {
-  tone: "light" | "neutral" | "dark";
-  complexity: "low" | "medium" | "high";
-  ageAppropriateness: "child" | "teen" | "mature";
+  tone: string;
+  complexity: string;
+  ageAppropriateness: string;
 }
 
 // Response interfaces from backend

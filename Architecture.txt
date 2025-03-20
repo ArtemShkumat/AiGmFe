@@ -1,0 +1,205 @@
+Front-End Architecture: GameFrontEnd (Player UI)
+1. Overview
+You will create a React + TypeScript application that enables a single user to manage multiple games. Each Game is stored in the backend under data/userData/<gameId>. The front end will:
+
+Start a new game by choosing a prebuilt scenario and setting game preferences + player character.
+Load an existing game (the user is the same, but can have multiple game sessions).
+Play the selected game by sending user inputs to the backend’s POST /api/RPG/input endpoint.
+The front end will also have a step for character creation, which calls a new endpoint POST /api/RPG/createCharacter, to generate player.json from a user’s freeform text.
+
+2. Data & Backend Endpoints
+2.1. Data Folder on Backend
+data/startingScenarios/: Contains multiple prebuilt scenarios (locations, NPCs, quests, etc.).
+data/userData/: Contains subfolders for each gameId. For example:
+bash
+Copy
+Edit
+data/userData/
+  game_12345/
+    world.json
+    player.json
+    npcs/
+    locations/
+    quests/
+    lore/
+    ...
+  game_54321/
+    ...
+2.2. Proposed Backend Endpoints
+GET /api/RPG/scenarios
+
+Returns a list of scenario IDs/names from data/startingScenarios/.
+Example:
+json
+Copy
+Edit
+[
+  { "scenarioId": "medieval_001", "name": "Medieval Kingdom" },
+  { "scenarioId": "zombie_101", "name": "Zombie Outbreak" }
+]
+GET /api/RPG/listGames
+
+Returns a list of gameId + short name for each subfolder in data/userData.
+Example:
+json
+Copy
+Edit
+[
+  { "gameId": "game_12345", "name": "My Medieval Adventure" },
+  { "gameId": "game_54321", "name": "Zombie Chaos" }
+]
+POST /api/RPG/createGame
+
+Body includes: { "scenarioId": "medieval_001", "gamePreferences": { ... } }.
+The backend copies or references the scenario data from startingScenarios/ into a new game_<randomId>/ folder under userData/.
+Returns { "gameId": "game_12345" } (the new folder name).
+POST /api/RPG/createCharacter
+
+Body includes: { "gameId": "...", "characterDescription": "A tall elf ranger..." }.
+The backend calls the LLM to transform the freeform text into player.json, then saves it into data/userData/<gameId>/player.json.
+Returns success or any relevant player object.
+POST /api/RPG/input (existing)
+
+Body: { "gameId": "...", "userInput": "...", "promptType": "DM" }
+Returns the LLM response to be displayed in the chat/narrative window.
+3. Main Pages & Flow
+You will create three main UI pages in React:
+
+TitlePage – offering New Game and Load Game.
+NewGameFlowPage – scenario selection → game preferences → create character.
+GamePage – the main game interface.
+Below is the recommended user flow:
+
+User lands on TitlePage
+“New Game” button → navigates to NewGameFlowPage.
+“Load Game” button → shows a list of existing games (via GET /api/RPG/listGames). The user picks one → navigates to GamePage.
+NewGameFlowPage
+Fetch scenario list from GET /api/RPG/scenarios.
+The user selects a scenario + sets game preferences (tone, complexity, etc.).
+On “Create Game,” calls POST /api/RPG/createGame with { scenarioId, gamePreferences }.
+Backend returns gameId.
+Next step: “Describe Character” – the user writes a freeform text describing their PC.
+On “Create Character,” calls POST /api/RPG/createCharacter with { gameId, characterDescription }.
+The user is done with setup – navigates to GamePage with the newly created gameId.
+GamePage
+A chat-like interface that calls POST /api/RPG/input with the gameId and user’s typed input.
+Displays the returned DM or NPC response on screen.
+4. High-Level Instructions for Each Page
+4.1. TitlePage
+Create a React component TitlePage that:
+
+Has a heading, e.g., “Welcome to Our RPG!”
+Two buttons: “New Game” and “Load Game.”
+On New Game click, routes to NewGameFlowPage.
+On Load Game click:
+Calls GET /api/RPG/listGames to get a list of existing games.
+Displays them in a simple list or dropdown.
+When the user selects one, navigate to /game/<selectedGameId>.
+4.2. NewGameFlowPage
+Create a multi-step form:
+
+Step 1: Scenario + Preferences
+
+GET /api/RPG/scenarios to fill a <select> or list of scenarios.
+GamePreferences form fields (tone, complexity, ageAppropriateness, etc.).
+On “Create Game,” POST /api/RPG/createGame. Store the returned gameId in state.
+Step 2: Character Creation
+
+The user sees a text area: “Describe your character.”
+On “Create Character,” call POST /api/RPG/createCharacter with { gameId, characterDescription }.
+Once successful, show a button “Enter Game” → navigate to /game/<gameId>.
+Implementation note: You can do two separate forms or a “wizard” approach. Keep it straightforward: scenario + preferences first, then a second step for character.
+
+4.3. GamePage
+Create a page with:
+
+Narrative/Chat Window: A list or feed of messages. Each entry can be:
+(from: 'player' | 'dm', text: string)
+User Input Box: Where the user types commands or conversation lines.
+Send button:
+Calls POST /api/RPG/input with { gameId, userInput, promptType: "DM" }.
+On success, display the returned text in the feed.
+Optionally, you can create side panels or “tabs” for Quests, NPCs, or Inventory if you want more structured info. But for now, a simple text-based conversation is fine.
+5. UI Library / Implementation Suggestions
+Material UI:
+Use <Button>, <TextField>, <Select>, etc. for your forms and inputs.
+Container and Grid layout for basic spacing.
+React Router for page navigation (TitlePage, NewGameFlowPage, GamePage).
+State Management:
+If you have minimal state, React’s local state + context is enough.
+If it grows large or you want consistent global states (like “current gameId”), consider storing it in a context provider or Redux store.
+6. Example Additional Endpoints on the Backend
+You’re already exposing:
+
+csharp
+Copy
+Edit
+[HttpPost("input")]
+public async Task<IActionResult> ProcessUserInput([FromBody] UserInputRequest request) 
+{
+  // ...
+}
+Now add:
+
+GET /api/RPG/scenarios
+
+Return an array of scenario objects.
+GET /api/RPG/listGames
+
+Return a minimal array of existing game folders from data/userData.
+E.g. [ { "gameId": "game_12345", "name": "My Medieval Adventure" } ].
+The “name” might be read from a small text file inside each folder, or from world.json, or you can keep it a placeholder.
+POST /api/RPG/createGame
+
+Body:
+json
+Copy
+Edit
+{
+  "scenarioId": "medieval_001",
+  "gamePreferences": {
+    "tone": "dark",
+    "complexity": "medium",
+    "ageAppropriateness": "mature"
+  }
+}
+The backend:
+Creates a unique ID: game_XXXXX.
+Copies or references the scenario data from data/startingScenarios/<scenarioId>/ into data/userData/game_XXXXX/.
+Merges or updates world.json with the user’s chosen preferences if needed.
+Returns: { "gameId": "game_XXXXX" }.
+POST /api/RPG/createCharacter
+
+Body:
+json
+Copy
+Edit
+{
+  "gameId": "game_XXXXX",
+  "characterDescription": "A tall elf ranger with keen senses..."
+}
+The backend calls the LLM to produce player.json from the freeform text.
+Saves it at data/userData/game_XXXXX/player.json.
+Returns success or a snippet from the new player.json.
+7. Summary of Implementation Steps (Instructional)
+Create TitlePage
+
+Display two buttons: “New Game,” “Load Game.”
+On “Load Game,” fetch from GET /api/RPG/listGames, present a list, navigate to /game/:gameId upon selection.
+Create NewGameFlowPage
+
+On mount, fetch scenarios from GET /api/RPG/scenarios for a dropdown.
+Let user pick scenario + fill out gamePreferences.
+On “Create Game,” call POST /api/RPG/createGame.
+Store the returned gameId in React state.
+Show a second step for “Describe your character.” The user writes freeform text.
+On “Create Character,” call POST /api/RPG/createCharacter with gameId + that text.
+Once successful, navigate to /game/<gameId>.
+Create GamePage
+
+Route path: /game/:gameId.
+Show a chat window or text feed.
+A text input for user commands.
+On user submit, call POST /api/RPG/input with the relevant gameId and user’s typed command.
+Append the LLM’s response to the feed for a back-and-forth text adventure.
+Integrate a Material UI theme for styling. Build basic forms with <TextField>, <Select>, <Button>, <Dialog> or <Stepper> if you want a multi-step wizard.
