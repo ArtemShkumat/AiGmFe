@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -26,28 +26,36 @@ const TitlePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch existing games when dialog opens
-  const handleLoadGameClick = async () => {
+  const handleLoadGameClick = useCallback(async () => {
     setOpenDialog(true);
-    setLoading(true);
-    try {
-      const gamesData = await api.listGames();
-      setGames(gamesData);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to load games:', err);
-      setError('Failed to load games. Please try again.');
-    } finally {
-      setLoading(false);
+    
+    // Only fetch games if we haven't already loaded them or if there was an error
+    if (games.length === 0 || error) {
+      setLoading(true);
+      try {
+        const gamesData = await api.listGames();
+        setGames(gamesData);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load games:', err);
+        setError('Failed to load games. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+  }, [games.length, error]);
 
-  const handleGameSelect = (gameId: string) => {
+  const handleGameSelect = useCallback((gameId: string) => {
     navigate(`/game/${gameId}`);
-  };
+  }, [navigate]);
 
-  const handleNewGame = () => {
+  const handleNewGame = useCallback(() => {
     navigate('/new-game');
-  };
+  }, [navigate]);
+
+  const handleCloseDialog = useCallback(() => {
+    setOpenDialog(false);
+  }, []);
 
   return (
     <Container maxWidth="md" sx={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -104,7 +112,7 @@ const TitlePage: React.FC = () => {
       {/* Load Game Dialog */}
       <Dialog 
         open={openDialog} 
-        onClose={() => setOpenDialog(false)}
+        onClose={handleCloseDialog}
         PaperProps={{
           sx: { 
             minWidth: '400px',

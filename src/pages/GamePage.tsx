@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -35,19 +35,21 @@ const GamePage: React.FC = () => {
   // Initialize with a welcome message from the DM
   useEffect(() => {
     if (gameId) {
-      // Add initial DM welcome message
-      setMessages([
-        {
-          from: 'dm',
-          text: 'Welcome to your adventure! I am your Dungeon Master. What would you like to do?',
-          timestamp: new Date()
-        }
-      ]);
+      // Add initial DM welcome message only when messages array is empty
+      if (messages.length === 0) {
+        setMessages([
+          {
+            from: 'dm',
+            text: 'Welcome to your adventure! I am your Dungeon Master. What would you like to do?',
+            timestamp: new Date()
+          }
+        ]);
+      }
     } else {
       setError('Game ID is missing. Please return to the title screen.');
       setOpenSnackbar(true);
     }
-  }, [gameId]);
+  }, [gameId, messages.length]);
   
   // Scroll to bottom of messages when new ones are added
   useEffect(() => {
@@ -62,19 +64,21 @@ const GamePage: React.FC = () => {
     setUserInput(event.target.value);
   };
   
-  const handleSendMessage = async () => {
+  // Use useCallback to prevent unnecessary re-renders
+  const handleSendMessage = useCallback(async () => {
     if (!gameId) {
       setError('Game ID is missing. Please return to the title screen.');
       setOpenSnackbar(true);
       return;
     }
     
-    if (!userInput.trim()) return;
+    const trimmedInput = userInput.trim();
+    if (!trimmedInput) return;
     
     // Add user message to chat
     const userMessage: Message = {
       from: 'player',
-      text: userInput,
+      text: trimmedInput,
       timestamp: new Date()
     };
     
@@ -86,7 +90,7 @@ const GamePage: React.FC = () => {
       // Call API with user input
       const response = await api.sendUserInput({
         gameId,
-        userInput: userInput.trim(),
+        userInput: trimmedInput,
         promptType: 'DM'
       });
       
@@ -106,14 +110,14 @@ const GamePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameId, userInput]);
   
-  const handleKeyPress = (event: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
   
   const handleReturnToTitle = () => {
     navigate('/');

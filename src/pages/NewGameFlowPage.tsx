@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -44,33 +44,48 @@ const NewGameFlowPage: React.FC = () => {
   const [characterDescription, setCharacterDescription] = useState('');
   const [gameId, setGameId] = useState<string | null>(null);
   
-  // Load scenarios on component mount
+  // Load scenarios only once on component mount
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchScenarios = async () => {
+      if (isLoading) return; // Prevent duplicate requests
+      
       setIsLoading(true);
       try {
         const scenariosData = await api.getScenarios();
-        setScenarios(scenariosData);
-        if (scenariosData.length > 0) {
-          setSelectedScenario(scenariosData[0].scenarioId);
+        if (isMounted) {
+          setScenarios(scenariosData);
+          if (scenariosData.length > 0) {
+            setSelectedScenario(scenariosData[0].scenarioId);
+          }
         }
       } catch (err) {
-        console.error('Failed to fetch scenarios:', err);
-        setError('Failed to load scenarios. Please try again.');
-        setOpenSnackbar(true);
+        if (isMounted) {
+          console.error('Failed to fetch scenarios:', err);
+          setError('Failed to load scenarios. Please try again.');
+          setOpenSnackbar(true);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchScenarios();
+    
+    // Cleanup function to handle component unmount
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array to ensure it runs only once
+  
+  const handleScenarioChange = useCallback((event: SelectChangeEvent) => {
+    setSelectedScenario(event.target.value);
   }, []);
   
-  const handleScenarioChange = (event: SelectChangeEvent) => {
-    setSelectedScenario(event.target.value);
-  };
-  
-  const handlePreferenceChange = (
+  const handlePreferenceChange = useCallback((
     event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
   ) => {
     const { name, value } = event.target;
@@ -80,13 +95,13 @@ const NewGameFlowPage: React.FC = () => {
         [name]: value,
       }));
     }
-  };
+  }, []);
   
-  const handleCharacterDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCharacterDescriptionChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setCharacterDescription(event.target.value);
-  };
+  }, []);
   
-  const handleCreateGame = async () => {
+  const handleCreateGame = useCallback(async () => {
     if (!selectedScenario) {
       setError('Please select a scenario first.');
       setOpenSnackbar(true);
@@ -109,9 +124,9 @@ const NewGameFlowPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedScenario, gamePreferences, setOpenSnackbar]);
   
-  const handleCreateCharacter = async () => {
+  const handleCreateCharacter = useCallback(async () => {
     if (!gameId) {
       setError('Game ID is missing. Please go back and try again.');
       setOpenSnackbar(true);
@@ -139,19 +154,19 @@ const NewGameFlowPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameId, characterDescription, navigate, setOpenSnackbar]);
   
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setActiveStep((prevStep) => prevStep - 1);
-  };
+  }, []);
   
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate('/');
-  };
+  }, [navigate]);
   
-  const handleCloseSnackbar = () => {
+  const handleCloseSnackbar = useCallback(() => {
     setOpenSnackbar(false);
-  };
+  }, []);
   
   // Step content
   const getStepContent = (step: number) => {
