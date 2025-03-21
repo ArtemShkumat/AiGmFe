@@ -97,7 +97,7 @@ const GamePage: React.FC = () => {
       // Add DM response to chat
       const dmResponse: Message = {
         from: 'dm',
-        text: response,
+        text: typeof response === 'string' ? response : JSON.stringify(response),
         timestamp: new Date()
       };
       

@@ -92,8 +92,15 @@ const api = {
         UserInput: request.userInput,
         PromptType: request.promptType
       };
-      const response = await axios.post<string>(`${API_URL}/input`, formattedRequest);
-      return response.data;
+      const response = await axios.post<any>(`${API_URL}/input`, formattedRequest);
+      
+      // Check if response.data is an object with response property
+      if (response.data && typeof response.data === 'object' && response.data.response) {
+        return response.data.response;
+      }
+      
+      // Otherwise, try to convert to string if possible
+      return typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
     } catch (error) {
       handleApiError(error);
       return '';
