@@ -5,7 +5,10 @@ import {
   CreateGameRequest, 
   CreateGameResponse,
   CreateCharacterRequest,
-  UserInputRequest
+  UserInputRequest,
+  PlayerInfo,
+  NPC,
+  InventoryItem
 } from '../types';
 
 const API_URL = 'http://localhost:5000/api/RPG'; // Adjust this to match your backend URL
@@ -104,6 +107,39 @@ const api = {
     } catch (error) {
       handleApiError(error);
       return '';
+    }
+  },
+  
+  // Get player information
+  getPlayerInfo: async (gameId: string): Promise<PlayerInfo | null> => {
+    try {
+      const response = await axios.get<PlayerInfo>(`${API_URL}/player?gameId=${gameId}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return null;
+    }
+  },
+  
+  // Get visible NPCs
+  getVisibleNpcs: async (gameId: string): Promise<NPC[]> => {
+    try {
+      const response = await axios.get<NPC[]>(`${API_URL}/visibleNpcs?gameId=${gameId}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return [];
+    }
+  },
+  
+  // Get player inventory
+  getPlayerInventory: async (gameId: string): Promise<InventoryItem[]> => {
+    try {
+      const response = await axios.get<InventoryItem[]>(`${API_URL}/inventory?gameId=${gameId}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return [];
     }
   }
 };

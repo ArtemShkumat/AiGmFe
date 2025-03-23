@@ -19,7 +19,8 @@ export interface Game {
 
 // Define PromptType enum to match backend
 export enum PromptType {
-  DM = 0
+  DM = 0,
+  NPC = 1
 }
 
 // Request interfaces
@@ -53,7 +54,81 @@ export interface CreateGameResponse {
 
 // Message interface for chat
 export interface Message {
-  from: "player" | "dm";
+  from: "player" | "dm" | "npc";
   text: string;
   timestamp?: Date;
+  npcId?: string;
+  npcName?: string;
+}
+
+// New interfaces for the RPG game
+export interface VisualDescription {
+  gender: string;
+  bodyType: string;
+  visibleClothing: string;
+  condition: string;
+}
+
+export interface PlayerInfo {
+  id: string;
+  name: string;
+  visualDescription: VisualDescription;
+  age: number;
+  backstory: string;
+  currentLocationId: string;
+  relationships: any[];
+  money: number;
+  statusEffects: any[];
+  rpgElements: Record<string, Record<string, number | string> | number | string>;
+  activeQuests: any[];
+  playerLog: any[];
+  notes: string;
+}
+
+export interface InventoryItem {
+  name: string;
+  description: string;
+  quantity: number;
+}
+
+export interface NPCRelationship {
+  npcId: string;
+  relationshipType: string;
+}
+
+export interface NPC {
+  type: string;
+  id: string;
+  name: string;
+  age: number;
+  currentLocationId: string;
+  discoveredByPlayer: boolean;
+  visibleToPlayer: boolean;
+  visualDescription: VisualDescription;
+  personality?: {
+    temperament: string;
+    traits: string;
+  };
+  backstory: string;
+  dispositionTowardsPlayer: string;
+  knownEntities?: {
+    npcsKnown: string[];
+    locationsKnown: string[];
+  };
+  relationships: NPCRelationship[];
+  questInvolvement?: string[];
+  inventory?: {
+    itemId: string;
+    quantity: number;
+  }[];
+  statusFlags: {
+    isAlive: boolean;
+    isBusy: boolean;
+    customState: string;
+  };
+  notes: string;
+  conversationLog?: {
+    Player?: string;
+    [key: string]: string | undefined;
+  }[];
 } 
