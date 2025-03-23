@@ -47,7 +47,8 @@ const GamePage: React.FC = () => {
   const [userInput, setUserInput] = useState('');
   const [npcInput, setNpcInput] = useState('');
   const [dmInput, setDmInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isNpcLoading, setIsNpcLoading] = useState(false);
+  const [isDmLoading, setIsDmLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   
@@ -87,7 +88,7 @@ const GamePage: React.FC = () => {
     if (!gameId) return;
     
     try {
-      setIsLoading(true);
+      setIsNpcLoading(true);
       
       // Fetch player info, NPCs, and inventory in parallel
       const [playerData, npcsData, inventoryData] = await Promise.all([
@@ -159,7 +160,7 @@ const GamePage: React.FC = () => {
       setError('Failed to load game data. Please try again.');
       setOpenSnackbar(true);
     } finally {
-      setIsLoading(false);
+      setIsNpcLoading(false);
     }
   };
   
@@ -219,7 +220,13 @@ const GamePage: React.FC = () => {
     } else {
       setDmInput('');
     }
-    setIsLoading(true);
+    
+    // Set the appropriate loading state
+    if (isNpcChat) {
+      setIsNpcLoading(true);
+    } else {
+      setIsDmLoading(true);
+    }
     
     try {
       if (isNpcChat && selectedNpc) {
@@ -269,9 +276,6 @@ const GamePage: React.FC = () => {
         };
         
         setDmMessages((prevMessages) => [...prevMessages, dmResponse]);
-        
-        // Refresh game data after DM interaction to update state
-        fetchGameData();
       }
       
       setError(null);
@@ -280,7 +284,12 @@ const GamePage: React.FC = () => {
       setError('Failed to get response from the game. Please try again.');
       setOpenSnackbar(true);
     } finally {
-      setIsLoading(false);
+      // Clear the appropriate loading state
+      if (isNpcChat) {
+        setIsNpcLoading(false);
+      } else {
+        setIsDmLoading(false);
+      }
     }
   }, [gameId, npcInput, dmInput, selectedNpc, npcChats]);
   
@@ -415,7 +424,7 @@ const GamePage: React.FC = () => {
               <div ref={messagesEndRef} />
             </List>
             
-            {isLoading && (
+            {isNpcLoading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                 <CircularProgress size={24} />
               </Box>
@@ -443,7 +452,7 @@ const GamePage: React.FC = () => {
                 value={npcInput}
                 onChange={handleNpcInputChange}
                 onKeyPress={(e) => handleKeyPress(e, true)}
-                disabled={isLoading}
+                disabled={isNpcLoading}
                 multiline
                 maxRows={3}
                 size="medium"
@@ -458,7 +467,7 @@ const GamePage: React.FC = () => {
                 color="secondary"
                 endIcon={<SendIcon />}
                 onClick={() => handleSendMessage(true)}
-                disabled={isLoading || !npcInput.trim()}
+                disabled={isNpcLoading || !npcInput.trim()}
                 sx={{ ml: 1, height: 55, borderRadius: 2, px: 3 }}
               >
                 Send
@@ -816,7 +825,7 @@ const GamePage: React.FC = () => {
           </List>
           
           {/* Loading indicator */}
-          {isLoading && (
+          {isDmLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
               <CircularProgress size={24} />
             </Box>
@@ -844,7 +853,7 @@ const GamePage: React.FC = () => {
               value={dmInput}
               onChange={handleDmInputChange}
               onKeyPress={(e) => handleKeyPress(e, false)}
-              disabled={isLoading}
+              disabled={isDmLoading}
               multiline
               maxRows={3}
               size="medium"
@@ -859,7 +868,7 @@ const GamePage: React.FC = () => {
               color="primary"
               endIcon={<SendIcon />}
               onClick={() => handleSendMessage(false)}
-              disabled={isLoading || !dmInput.trim()}
+              disabled={isDmLoading || !dmInput.trim()}
               sx={{ ml: 1, height: 55, borderRadius: 2, px: 3 }}
             >
               Send
