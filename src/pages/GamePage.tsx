@@ -195,6 +195,12 @@ const GamePage: React.FC = () => {
       return;
     }
     
+    if (isNpcChat && !selectedNpc) {
+      setError('No NPC selected for chat.');
+      setOpenSnackbar(true);
+      return;
+    }
+    
     // Get the correct input based on chat type
     const input = isNpcChat ? npcInput : dmInput;
     const trimmedInput = input.trim();
@@ -227,7 +233,8 @@ const GamePage: React.FC = () => {
         const response = await api.sendUserInput({
           gameId,
           userInput: trimmedInput,
-          promptType: PromptType.NPC
+          promptType: PromptType.NPC,
+          npcId: selectedNpc.id
         });
         
         // Add NPC response to chat

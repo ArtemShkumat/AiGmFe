@@ -8,7 +8,8 @@ import {
   UserInputRequest,
   PlayerInfo,
   NPC,
-  InventoryItem
+  InventoryItem,
+  PromptType
 } from '../types';
 
 const API_URL = 'http://localhost:5000/api/RPG'; // Adjust this to match your backend URL
@@ -89,11 +90,17 @@ const api = {
   // Send user input and get response
   sendUserInput: async (request: UserInputRequest): Promise<string> => {
     try {
+      // Ensure NpcId is provided when PromptType is NPC
+      if (request.promptType === PromptType.NPC && !request.npcId) {
+        throw new Error('NpcId is required for NPC chat type');
+      }
+      
       // Construct the request with proper property casing
       const formattedRequest = {
         GameId: request.gameId,
         UserInput: request.userInput,
-        PromptType: request.promptType
+        PromptType: request.promptType,
+        NpcId: request.npcId || null // Include null explicitly for DM chats
       };
       const response = await axios.post<any>(`${API_URL}/input`, formattedRequest);
       

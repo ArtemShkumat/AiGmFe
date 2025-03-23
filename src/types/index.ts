@@ -38,6 +38,7 @@ export interface UserInputRequest {
   gameId: string;
   userInput: string;
   promptType: PromptType;
+  npcId?: string;
 }
 
 // Game preference options
