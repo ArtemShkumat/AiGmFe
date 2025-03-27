@@ -29,6 +29,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PersonIcon from '@mui/icons-material/Person';
 import PeopleIcon from '@mui/icons-material/People';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../api/api';
 import { Message, PromptType, NPC, PlayerInfo, InventoryItem } from '../types';
 
@@ -49,6 +50,7 @@ const GamePage: React.FC = () => {
   const [dmInput, setDmInput] = useState('');
   const [isNpcLoading, setIsNpcLoading] = useState(false);
   const [isDmLoading, setIsDmLoading] = useState(false);
+  const [isNpcsLoading, setIsNpcsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   
@@ -64,17 +66,6 @@ const GamePage: React.FC = () => {
   // Initialize game state
   useEffect(() => {
     if (gameId) {
-      // Load DM welcome message
-      if (dmMessages.length === 0) {
-        setDmMessages([
-          {
-            from: 'dm',
-            text: 'Welcome to your adventure! I am your Dungeon Master. What would you like to do?',
-            timestamp: new Date()
-          }
-        ]);
-      }
-      
       // Fetch initial game data
       fetchGameData();
     } else {
@@ -82,6 +73,35 @@ const GamePage: React.FC = () => {
       setOpenSnackbar(true);
     }
   }, [gameId]);
+  
+  // Fetch visible NPCs only
+  const fetchVisibleNpcs = async () => {
+    if (!gameId) return;
+    
+    try {
+      setIsNpcsLoading(true);
+      const npcsData = await api.getVisibleNpcs(gameId);
+      setVisibleNpcs(npcsData);
+      
+      // If currently no NPC is selected but NPCs are available, select the first one
+      if (npcsData.length > 0 && !selectedNpc) {
+        setSelectedNpc(npcsData[0]);
+        setMainWindowView('npc-chat');
+      } else if (selectedNpc) {
+        // Make sure selected NPC is still in the visible list, otherwise select the first one
+        const stillExists = npcsData.some(npc => npc.id === selectedNpc.id);
+        if (!stillExists && npcsData.length > 0) {
+          setSelectedNpc(npcsData[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch visible NPCs:', err);
+      setError('Failed to refresh visible NPCs. Please try again.');
+      setOpenSnackbar(true);
+    } finally {
+      setIsNpcsLoading(false);
+    }
+  };
   
   // Fetch game data from API
   const fetchGameData = async () => {
@@ -130,17 +150,6 @@ const GamePage: React.FC = () => {
                 timestamp: new Date()
               });
             }
-          });
-        }
-        
-        // If no conversation log, add greeting
-        if (initialMessages.length === 0) {
-          initialMessages.push({
-            from: 'npc',
-            text: `Hello there. I'm ${npc.name}.`,
-            npcId: npc.id,
-            npcName: npc.name,
-            timestamp: new Date()
           });
         }
         
@@ -257,6 +266,9 @@ const GamePage: React.FC = () => {
         const currentChatWithResponse = updatedChatWithResponse.get(selectedNpc.id) || [];
         updatedChatWithResponse.set(selectedNpc.id, [...currentChatWithResponse, npcResponse]);
         setNpcChats(updatedChatWithResponse);
+        
+        // Fetch updated visible NPCs after NPC responds
+        await fetchVisibleNpcs();
       } else {
         // DM chat
         setDmMessages((prevMessages) => [...prevMessages, userMessage]);
@@ -276,6 +288,9 @@ const GamePage: React.FC = () => {
         };
         
         setDmMessages((prevMessages) => [...prevMessages, dmResponse]);
+        
+        // Fetch updated visible NPCs after DM responds
+        await fetchVisibleNpcs();
       }
       
       setError(null);
@@ -680,18 +695,37 @@ const GamePage: React.FC = () => {
                 p: 2,
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer'
+                alignItems: 'center'
               }}
-              onClick={toggleNpcsExpanded}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  flexGrow: 1
+                }}
+                onClick={toggleNpcsExpanded}
+              >
                 <PeopleIcon sx={{ mr: 1 }} />
                 <Typography variant="h6">Visible NPCs</Typography>
               </Box>
-              <IconButton size="small">
-                {npcsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <IconButton 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchVisibleNpcs();
+                  }}
+                  disabled={isNpcsLoading}
+                  title="Refresh NPCs"
+                >
+                  {isNpcsLoading ? <CircularProgress size={18} /> : <RefreshIcon />}
+                </IconButton>
+                <IconButton size="small" onClick={toggleNpcsExpanded}>
+                  {npcsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </IconButton>
+              </Box>
             </Box>
             
             <Collapse in={npcsExpanded}>
