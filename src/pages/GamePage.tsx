@@ -53,6 +53,8 @@ const GamePage: React.FC = () => {
   const [isNpcsLoading, setIsNpcsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [hasPendingEntities, setHasPendingEntities] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   
   // UI State
   const [mainWindowView, setMainWindowView] = useState<MainWindowView>('npc-chat');
@@ -197,7 +199,48 @@ const GamePage: React.FC = () => {
     setDmInput(event.target.value);
   };
   
-  // Send message to DM or NPC
+  // Poll for pending entities
+  const startPollingForPendingEntities = useCallback(() => {
+    if (!gameId) return;
+    
+    // Clear any existing interval
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Set initial state
+    setHasPendingEntities(true);
+    
+    // Start polling
+    const interval = setInterval(async () => {
+      try {
+        const hasPending = await api.hasPendingEntities(gameId);
+        setHasPendingEntities(hasPending);
+        if (!hasPending) {
+          clearInterval(interval);
+          setPollingInterval(null);
+        }
+      } catch (err) {
+        console.error('Failed to check pending entities:', err);
+        clearInterval(interval);
+        setPollingInterval(null);
+        setHasPendingEntities(false);
+      }
+    }, 1000); // Poll every second
+    
+    setPollingInterval(interval);
+  }, [gameId, pollingInterval]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+  
+  // Modify handleSendMessage to start polling after sending input
   const handleSendMessage = useCallback(async (isNpcChat: boolean = false) => {
     if (!gameId) {
       setError('Game ID is missing. Please return to the title screen.');
@@ -293,6 +336,9 @@ const GamePage: React.FC = () => {
         await fetchVisibleNpcs();
       }
       
+      // Start polling for pending entities after sending input
+      startPollingForPendingEntities();
+      
       setError(null);
     } catch (err) {
       console.error('Failed to send user input:', err);
@@ -306,7 +352,7 @@ const GamePage: React.FC = () => {
         setIsDmLoading(false);
       }
     }
-  }, [gameId, npcInput, dmInput, selectedNpc, npcChats]);
+  }, [gameId, npcInput, dmInput, selectedNpc, npcChats, startPollingForPendingEntities]);
   
   // Handle enter key press
   const handleKeyPress = useCallback((event: React.KeyboardEvent, isNpcChat: boolean = false) => {
@@ -646,6 +692,25 @@ const GamePage: React.FC = () => {
         <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
           {playerInfo?.name ? `${playerInfo.name}'s Adventure` : `Game #${gameId}`}
         </Typography>
+        {hasPendingEntities && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              animation: 'pulse 2s infinite'
+            }}
+          >
+            <CircularProgress size={16} sx={{ mr: 1, color: 'inherit' }} />
+            <Typography variant="body2">
+              The world is being updated...
+            </Typography>
+          </Box>
+        )}
       </Box>
       
       {/* Main Content Area - Grid layout */}
