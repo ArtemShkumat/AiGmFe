@@ -20,7 +20,11 @@ import {
   Collapse,
   Grid,
   Avatar,
-  Badge
+  Badge,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -30,6 +34,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import PersonIcon from '@mui/icons-material/Person';
 import PeopleIcon from '@mui/icons-material/People';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import api from '../api/api';
 import { Message, PromptType, NPC, PlayerInfo, InventoryItem } from '../types';
 
@@ -64,6 +69,11 @@ const GamePage: React.FC = () => {
   const [playerInfo, setPlayerInfo] = useState<PlayerInfo | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [npcChats, setNpcChats] = useState<Map<string, Message[]>>(new Map());
+  
+  // Admin state
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminActionResult, setAdminActionResult] = useState<string | null>(null);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
   
   // Initialize game state
   useEffect(() => {
@@ -388,6 +398,46 @@ const GamePage: React.FC = () => {
     setMainWindowView('character');
   };
   
+  // Admin functions
+  const handleOpenAdminDialog = () => {
+    setAdminDialogOpen(true);
+    setAdminActionResult(null);
+  };
+
+  const handleCloseAdminDialog = () => {
+    setAdminDialogOpen(false);
+  };
+
+  const handleValidateGameData = async () => {
+    if (!gameId) return;
+    
+    try {
+      setAdminActionLoading(true);
+      const result = await api.validateGameData(gameId);
+      setAdminActionResult(result);
+    } catch (err) {
+      console.error('Failed to validate game data:', err);
+      setAdminActionResult('Error validating game data. Check console for details.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const handleAutocreateReferences = async () => {
+    if (!gameId) return;
+    
+    try {
+      setAdminActionLoading(true);
+      const result = await api.autocreateGamlingReferences(gameId);
+      setAdminActionResult(result);
+    } catch (err) {
+      console.error('Failed to autocreate references:', err);
+      setAdminActionResult('Error creating dangling references. Check console for details.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+  
   // Render message bubbles
   const renderMessage = (message: Message, index: number, isLast: boolean) => (
     <React.Fragment key={index}>
@@ -583,12 +633,22 @@ const GamePage: React.FC = () => {
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
+            justifyContent: 'space-between',
             p: 2, 
             borderBottom: '1px solid',
             borderColor: 'divider'
           }}>
-            <PersonIcon sx={{ mr: 2 }} />
-            <Typography variant="h6">Character Sheet</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <PersonIcon sx={{ mr: 2 }} />
+              <Typography variant="h6">Character Sheet</Typography>
+            </Box>
+            <IconButton 
+              color="primary" 
+              onClick={handleOpenAdminDialog} 
+              title="Admin Tools"
+            >
+              <AdminPanelSettingsIcon />
+            </IconButton>
           </Box>
           
           <Box sx={{ p: 3, overflow: 'auto' }}>
@@ -654,6 +714,64 @@ const GamePage: React.FC = () => {
               </Grid>
             )}
           </Box>
+
+          {/* Admin Dialog */}
+          <Dialog 
+            open={adminDialogOpen} 
+            onClose={handleCloseAdminDialog}
+            fullWidth
+            maxWidth="md"
+          >
+            <DialogTitle>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <AdminPanelSettingsIcon sx={{ mr: 2 }} />
+                <Typography variant="h6">Game Admin Tools</Typography>
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} md={6}>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    fullWidth
+                    onClick={handleValidateGameData}
+                    disabled={adminActionLoading}
+                  >
+                    Validate Game Data
+                  </Button>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Button 
+                    variant="contained" 
+                    color="secondary"
+                    fullWidth
+                    onClick={handleAutocreateReferences}
+                    disabled={adminActionLoading}
+                  >
+                    Autocreate Dangling References
+                  </Button>
+                </Grid>
+                {adminActionLoading && (
+                  <Grid item xs={12} sx={{ textAlign: 'center', my: 2 }}>
+                    <CircularProgress size={24} />
+                  </Grid>
+                )}
+                {adminActionResult && (
+                  <Grid item xs={12} sx={{ mt: 2 }}>
+                    <Paper sx={{ p: 2, maxHeight: '300px', overflow: 'auto' }}>
+                      <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {adminActionResult}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                )}
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseAdminDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
         </>
       );
     }

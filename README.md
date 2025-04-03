@@ -44,11 +44,15 @@ This application follows a structured architecture with the following components
 ### API Interactions
 
 The frontend communicates with a local backend service through various endpoints:
-- `GET /api/RPG/scenarios`: Retrieve available game scenarios
-- `GET /api/RPG/listGames`: Get a list of existing game sessions
-- `POST /api/RPG/createGame`: Create a new game with selected preferences
-- `POST /api/RPG/createCharacter`: Generate a character from text description
-- `POST /api/RPG/input`: Send player inputs and get game responses
+- `GET /api/GameManagement/scenarios`: Retrieve available game scenarios
+- `GET /api/GameManagement/listGames`: Get a list of existing game sessions
+- `POST /api/GameManagement/createGame`: Create a new game with selected preferences
+- `POST /api/Interaction/createCharacter`: Generate a character from text description
+- `POST /api/Interaction/input`: Send player inputs and get game responses
+- `GET /api/GameState/player`: Get player information
+- `GET /api/GameState/visibleNpcs`: Get visible NPCs in the current scene
+- `GET /api/GameState/inventory`: Get player inventory
+- `GET /api/EntityStatus/pending/{userId}`: Check for pending entity creation
 
 ## Technologies Used
 
