@@ -20,6 +20,7 @@ interface AdminDialogProps {
   onClose: () => void;
   onValidateGameData: () => void;
   onAutocreateReferences: () => void;
+  onSyncNpcLocations: () => void;
 }
 
 const AdminDialog: React.FC<AdminDialogProps> = ({
@@ -28,7 +29,8 @@ const AdminDialog: React.FC<AdminDialogProps> = ({
   result,
   onClose,
   onValidateGameData,
-  onAutocreateReferences
+  onAutocreateReferences,
+  onSyncNpcLocations
 }) => {
   return (
     <Dialog 
@@ -65,6 +67,17 @@ const AdminDialog: React.FC<AdminDialogProps> = ({
               disabled={isLoading}
             >
               Autocreate Dangling References
+            </Button>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Button 
+              variant="contained" 
+              color="info"
+              fullWidth
+              onClick={onSyncNpcLocations}
+              disabled={isLoading}
+            >
+              Sync NPC Locations
             </Button>
           </Grid>
           {isLoading && (

@@ -186,6 +186,17 @@ const api = {
       handleApiError(error);
       return '';
     }
+  },
+  
+  // Sync NPC locations - Admin function
+  syncNpcLocations: async (gameId: string): Promise<string> => {
+    try {
+      const response = await axios.post<any>(`${GAME_ADMIN_CONTROLLER}/${gameId}/sync-npc-locations`);
+      return typeof response.data === 'string' ? response.data : JSON.stringify(response.data, null, 2);
+    } catch (error) {
+      handleApiError(error);
+      return '';
+    }
   }
 };
 

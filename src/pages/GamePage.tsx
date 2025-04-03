@@ -404,6 +404,21 @@ const GamePage: React.FC = () => {
     }
   };
   
+  const handleSyncNpcLocations = async () => {
+    if (!gameId) return;
+    
+    try {
+      setAdminActionLoading(true);
+      const result = await api.syncNpcLocations(gameId);
+      setAdminActionResult(result);
+    } catch (err) {
+      console.error('Failed to sync NPC locations:', err);
+      setAdminActionResult('Error syncing NPC locations. Check console for details.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+  
   // Render the main window content
   const renderMainWindowContent = () => {
     if (mainWindowView === 'npc-chat' && selectedNpc) {
@@ -533,6 +548,7 @@ const GamePage: React.FC = () => {
         onClose={handleCloseAdminDialog}
         onValidateGameData={handleValidateGameData}
         onAutocreateReferences={handleAutocreateReferences}
+        onSyncNpcLocations={handleSyncNpcLocations}
       />
       
       {/* Error Snackbar */}
