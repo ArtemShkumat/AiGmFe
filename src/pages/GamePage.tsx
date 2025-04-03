@@ -1,51 +1,28 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  List,
-  ListItem,
-  ListItemButton,
-  Divider,
-  CircularProgress,
-  IconButton,
   Snackbar,
-  Alert,
-  useTheme,
-  Card,
-  CardContent,
-  Collapse,
-  Grid,
-  Avatar,
-  Badge,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle
+  Alert
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import PersonIcon from '@mui/icons-material/Person';
-import PeopleIcon from '@mui/icons-material/People';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import api from '../api/api';
 import { Message, PromptType, NPC, PlayerInfo, InventoryItem } from '../types';
+
+// Import smaller components
+import GameHeader from '../components/game/GameHeader';
+import NPCList from '../components/game/NPCList';
+import NPCChat from '../components/game/NPCChat';
+import CharacterSheet from '../components/game/CharacterSheet';
+import InventoryDisplay from '../components/game/InventoryDisplay';
+import SidebarControls from '../components/game/SidebarControls';
+import DMChat from '../components/game/DMChat';
+import AdminDialog from '../components/game/AdminDialog';
 
 type MainWindowView = 'npc-chat' | 'inventory' | 'character';
 
 const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const dmMessagesEndRef = useRef<HTMLDivElement>(null);
   
   // Game State
   const [messages, setMessages] = useState<Message[]>([]);
@@ -184,17 +161,6 @@ const GamePage: React.FC = () => {
       setIsNpcLoading(false);
     }
   };
-  
-  // Scroll to bottom of messages when new ones are added
-  useEffect(() => {
-    if (mainWindowView === 'npc-chat' && selectedNpc) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [npcChats, selectedNpc, mainWindowView]);
-  
-  useEffect(() => {
-    dmMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [dmMessages]);
   
   // Handle user input
   const handleUserInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -438,342 +404,26 @@ const GamePage: React.FC = () => {
     }
   };
   
-  // Render message bubbles
-  const renderMessage = (message: Message, index: number, isLast: boolean) => (
-    <React.Fragment key={index}>
-      <ListItem
-        alignItems="flex-start"
-        sx={{
-          flexDirection: 'column',
-          alignItems: message.from === 'player' ? 'flex-end' : 'flex-start',
-          mb: 2
-        }}
-      >
-        <Typography
-          variant="caption"
-          component="div"
-          sx={{
-            color: 'text.secondary',
-            mb: 0.5,
-            fontWeight: 500
-          }}
-        >
-          {message.from === 'player' 
-            ? 'You' 
-            : message.from === 'dm' 
-              ? 'Dungeon Master' 
-              : message.npcName || 'NPC'}
-        </Typography>
-        
-        <Paper
-          elevation={1}
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            maxWidth: '80%',
-            bgcolor: message.from === 'player' 
-              ? 'primary.dark' 
-              : message.from === 'npc' 
-                ? theme.palette.secondary.dark 
-                : 'background.paper',
-            border: `1px solid ${
-              message.from === 'player' 
-                ? theme.palette.primary.main 
-                : message.from === 'npc' 
-                  ? theme.palette.secondary.main 
-                  : '#333'
-            }`
-          }}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}
-          >
-            {message.text}
-          </Typography>
-        </Paper>
-      </ListItem>
-      {!isLast && (
-        <Divider variant="middle" sx={{ my: 1, opacity: 0.2 }} />
-      )}
-    </React.Fragment>
-  );
-  
-  // Render the main window content based on the current view
+  // Render the main window content
   const renderMainWindowContent = () => {
     if (mainWindowView === 'npc-chat' && selectedNpc) {
       const currentChat = npcChats.get(selectedNpc.id) || [];
       
       return (
-        <>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            p: 2, 
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <Avatar sx={{ mr: 2, bgcolor: 'secondary.main' }}>
-              {selectedNpc.name.charAt(0)}
-            </Avatar>
-            <Typography variant="h6">{selectedNpc.name}</Typography>
-          </Box>
-          
-          <Box sx={{ 
-            flexGrow: 1, 
-            p: 2, 
-            overflow: 'auto',
-            bgcolor: theme.palette.background.default
-          }}>
-            <List sx={{ width: '100%' }}>
-              {currentChat.map((message, index) => (
-                renderMessage(message, index, index === currentChat.length - 1)
-              ))}
-              <div ref={messagesEndRef} />
-            </List>
-            
-            {isNpcLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            )}
-          </Box>
-          
-          <Box
-            component="form"
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              borderTop: '1px solid',
-              borderColor: 'divider'
-            }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage(true);
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Say something to this character..."
-                value={npcInput}
-                onChange={handleNpcInputChange}
-                onKeyPress={(e) => handleKeyPress(e, true)}
-                disabled={isNpcLoading}
-                multiline
-                maxRows={3}
-                size="medium"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2
-                  }
-                }}
-              />
-              <Button
-                variant="contained"
-                color="secondary"
-                endIcon={<SendIcon />}
-                onClick={() => handleSendMessage(true)}
-                disabled={isNpcLoading || !npcInput.trim()}
-                sx={{ ml: 1, height: 55, borderRadius: 2, px: 3 }}
-              >
-                Send
-              </Button>
-            </Box>
-          </Box>
-        </>
+        <NPCChat 
+          selectedNpc={selectedNpc}
+          messages={currentChat}
+          npcInput={npcInput}
+          isNpcLoading={isNpcLoading}
+          onNpcInputChange={handleNpcInputChange}
+          onKeyPress={(e) => handleKeyPress(e, true)}
+          onSendMessage={() => handleSendMessage(true)}
+        />
       );
     } else if (mainWindowView === 'inventory') {
-      return (
-        <>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            p: 2, 
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <InventoryIcon sx={{ mr: 2 }} />
-            <Typography variant="h6">Inventory</Typography>
-          </Box>
-          
-          <Box sx={{ p: 3, overflow: 'auto' }}>
-            {inventory.length === 0 ? (
-              <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
-                Your inventory is empty.
-              </Typography>
-            ) : (
-              <Grid container spacing={2}>
-                {inventory.map((item, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {item.name} {item.quantity > 1 && `(${item.quantity})`}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.description}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Box>
-        </>
-      );
+      return <InventoryDisplay inventory={inventory} />;
     } else if (mainWindowView === 'character') {
-      return (
-        <>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            p: 2, 
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <PersonIcon sx={{ mr: 2 }} />
-              <Typography variant="h6">Character Sheet</Typography>
-            </Box>
-            <IconButton 
-              color="primary" 
-              onClick={handleOpenAdminDialog} 
-              title="Admin Tools"
-            >
-              <AdminPanelSettingsIcon />
-            </IconButton>
-          </Box>
-          
-          <Box sx={{ p: 3, overflow: 'auto' }}>
-            {!playerInfo ? (
-              <Typography variant="body1" sx={{ textAlign: 'center', py: 4 }}>
-                Character information not available.
-              </Typography>
-            ) : (
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Paper sx={{ p: 3 }}>
-                    <Typography variant="h4" gutterBottom>{playerInfo.name}</Typography>
-                    <Typography variant="body1" paragraph>{playerInfo.backstory}</Typography>
-                    
-                    <Divider sx={{ my: 2 }} />
-                    
-                    <Typography variant="h6" gutterBottom>Appearance</Typography>
-                    <Typography variant="body2" paragraph>
-                      {playerInfo.visualDescription.gender}, {playerInfo.visualDescription.bodyType}. {playerInfo.visualDescription.condition}.
-                      Wearing {playerInfo.visualDescription.visibleClothing}.
-                    </Typography>
-                    
-                    <Divider sx={{ my: 2 }} />
-                    
-                    <Grid container spacing={2}>
-                      {Object.entries(playerInfo.rpgElements).map(([categoryName, categoryValue]) => (
-                        <Grid item xs={12} md={6} key={categoryName}>
-                          <Typography variant="h6" gutterBottom sx={{ textTransform: 'capitalize' }}>
-                            {categoryName}
-                          </Typography>
-                          
-                          {typeof categoryValue === 'object' ? (
-                            // If it's a nested object with more key-values
-                            Object.entries(categoryValue as Record<string, any>).map(([key, value]) => (
-                              <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                                  {key}:
-                                </Typography>
-                                <Typography variant="body1">{value.toString()}</Typography>
-                              </Box>
-                            ))
-                          ) : (
-                            // If it's a direct value
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                              <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                                {categoryName}:
-                              </Typography>
-                              <Typography variant="body1">{categoryValue.toString()}</Typography>
-                            </Box>
-                          )}
-                        </Grid>
-                      ))}
-                    </Grid>
-                    
-                    <Divider sx={{ my: 2 }} />
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="h6">Money:</Typography>
-                      <Typography variant="h6">${playerInfo.money}</Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
-            )}
-          </Box>
-
-          {/* Admin Dialog */}
-          <Dialog 
-            open={adminDialogOpen} 
-            onClose={handleCloseAdminDialog}
-            fullWidth
-            maxWidth="md"
-          >
-            <DialogTitle>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <AdminPanelSettingsIcon sx={{ mr: 2 }} />
-                <Typography variant="h6">Game Admin Tools</Typography>
-              </Box>
-            </DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={6}>
-                  <Button 
-                    variant="contained" 
-                    color="primary"
-                    fullWidth
-                    onClick={handleValidateGameData}
-                    disabled={adminActionLoading}
-                  >
-                    Validate Game Data
-                  </Button>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Button 
-                    variant="contained" 
-                    color="secondary"
-                    fullWidth
-                    onClick={handleAutocreateReferences}
-                    disabled={adminActionLoading}
-                  >
-                    Autocreate Dangling References
-                  </Button>
-                </Grid>
-                {adminActionLoading && (
-                  <Grid item xs={12} sx={{ textAlign: 'center', my: 2 }}>
-                    <CircularProgress size={24} />
-                  </Grid>
-                )}
-                {adminActionResult && (
-                  <Grid item xs={12} sx={{ mt: 2 }}>
-                    <Paper sx={{ p: 2, maxHeight: '300px', overflow: 'auto' }}>
-                      <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
-                        {adminActionResult}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                )}
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseAdminDialog}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        </>
-      );
+      return <CharacterSheet playerInfo={playerInfo} onOpenAdminDialog={handleOpenAdminDialog} />;
     }
     
     return null;
@@ -789,47 +439,13 @@ const GamePage: React.FC = () => {
         color: 'text.primary'
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          p: 2,
-          bgcolor: 'background.paper',
-          boxShadow: 1,
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <IconButton
-          color="inherit"
-          edge="start"
-          onClick={handleReturnToTitle}
-          sx={{ mr: 2 }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
-          {playerInfo?.name ? `${playerInfo.name}'s Adventure` : `Game #${gameId}`}
-        </Typography>
-        {hasPendingEntities && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              px: 2,
-              py: 1,
-              borderRadius: 1,
-              animation: 'pulse 2s infinite'
-            }}
-          >
-            <CircularProgress size={16} sx={{ mr: 1, color: 'inherit' }} />
-            <Typography variant="body2">
-              The world is being updated...
-            </Typography>
-          </Box>
-        )}
-      </Box>
+      {/* Game Header */}
+      <GameHeader 
+        playerInfo={playerInfo} 
+        gameId={gameId} 
+        hasPendingEntities={hasPendingEntities} 
+        onReturnToTitle={handleReturnToTitle} 
+      />
       
       {/* Main Content Area - Grid layout */}
       <Box
@@ -866,137 +482,25 @@ const GamePage: React.FC = () => {
             bgcolor: 'background.paper'
           }}
         >
-          {/* Visible NPCs Section */}
-          <Box
-            sx={{
-              borderBottom: '1px solid',
-              borderColor: 'divider'
-            }}
-          >
-            <Box
-              sx={{
-                p: 2,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  flexGrow: 1
-                }}
-                onClick={toggleNpcsExpanded}
-              >
-                <PeopleIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">Visible NPCs</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <IconButton 
-                  size="small" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fetchVisibleNpcs();
-                  }}
-                  disabled={isNpcsLoading}
-                  title="Refresh NPCs"
-                >
-                  {isNpcsLoading ? <CircularProgress size={18} /> : <RefreshIcon />}
-                </IconButton>
-                <IconButton size="small" onClick={toggleNpcsExpanded}>
-                  {npcsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                </IconButton>
-              </Box>
-            </Box>
-            
-            <Collapse in={npcsExpanded}>
-              <List
-                sx={{
-                  maxHeight: 280,
-                  overflow: 'auto',
-                  p: 0
-                }}
-              >
-                {visibleNpcs.length === 0 ? (
-                  <ListItem>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      No NPCs visible
-                    </Typography>
-                  </ListItem>
-                ) : (
-                  visibleNpcs.map((npc) => (
-                    <ListItemButton
-                      key={npc.id}
-                      selected={selectedNpc?.id === npc.id && mainWindowView === 'npc-chat'}
-                      onClick={() => handleSelectNpc(npc)}
-                      sx={{
-                        borderLeft: selectedNpc?.id === npc.id && mainWindowView === 'npc-chat'
-                          ? `3px solid ${theme.palette.secondary.main}`
-                          : '3px solid transparent'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <Avatar
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            bgcolor: selectedNpc?.id === npc.id && mainWindowView === 'npc-chat'
-                              ? 'secondary.main'
-                              : 'primary.main',
-                            mr: 1
-                          }}
-                        >
-                          {npc.name.charAt(0)}
-                        </Avatar>
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            fontWeight: selectedNpc?.id === npc.id && mainWindowView === 'npc-chat'
-                              ? 'bold'
-                              : 'normal'
-                          }}
-                        >
-                          {npc.name}
-                        </Typography>
-                      </Box>
-                    </ListItemButton>
-                  ))
-                )}
-              </List>
-            </Collapse>
-          </Box>
+          {/* NPC List */}
+          <NPCList 
+            visibleNpcs={visibleNpcs}
+            selectedNpc={selectedNpc}
+            mainWindowView={mainWindowView}
+            npcsExpanded={npcsExpanded}
+            isNpcsLoading={isNpcsLoading}
+            onToggleNpcsExpanded={toggleNpcsExpanded}
+            onSelectNpc={handleSelectNpc}
+            onRefreshNpcs={fetchVisibleNpcs}
+          />
           
           {/* Inventory and Character Buttons */}
-          <Box sx={{ p: 2 }}>
-            <Button
-              fullWidth
-              variant={mainWindowView === 'inventory' ? 'contained' : 'outlined'}
-              color="primary"
-              startIcon={<InventoryIcon />}
-              onClick={handleShowInventory}
-              sx={{ mb: 2 }}
-            >
-              Inventory
-              <Badge
-                color="secondary"
-                badgeContent={inventory.length}
-                sx={{ ml: 1 }}
-                max={99}
-              />
-            </Button>
-            
-            <Button
-              fullWidth
-              variant={mainWindowView === 'character' ? 'contained' : 'outlined'}
-              color="primary"
-              startIcon={<PersonIcon />}
-              onClick={handleShowCharacter}
-            >
-              Character Sheet
-            </Button>
-          </Box>
+          <SidebarControls 
+            mainWindowView={mainWindowView}
+            inventoryCount={inventory.length}
+            onShowInventory={handleShowInventory}
+            onShowCharacter={handleShowCharacter}
+          />
         </Box>
       </Box>
       
@@ -1011,88 +515,25 @@ const GamePage: React.FC = () => {
           bgcolor: 'background.default'
         }}
       >
-        <Box
-          sx={{
-            p: 1,
-            display: 'flex',
-            alignItems: 'center',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            bgcolor: theme.palette.background.paper
-          }}
-        >
-          <Typography variant="subtitle1" fontWeight="bold">
-            Dungeon Master Chat
-          </Typography>
-        </Box>
-        
-        <Box
-          sx={{
-            flexGrow: 1,
-            p: 2,
-            overflow: 'auto',
-            bgcolor: theme.palette.background.default
-          }}
-        >
-          <List sx={{ width: '100%' }}>
-            {dmMessages.map((message, index) => (
-              renderMessage(message, index, index === dmMessages.length - 1)
-            ))}
-            <div ref={dmMessagesEndRef} />
-          </List>
-          
-          {/* Loading indicator */}
-          {isDmLoading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
-        </Box>
-        
-        <Box
-          component="form"
-          sx={{
-            p: 2,
-            bgcolor: 'background.paper',
-            borderTop: '1px solid',
-            borderColor: 'divider'
-          }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSendMessage(false);
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Talk to the Dungeon Master..."
-              value={dmInput}
-              onChange={handleDmInputChange}
-              onKeyPress={(e) => handleKeyPress(e, false)}
-              disabled={isDmLoading}
-              multiline
-              maxRows={3}
-              size="medium"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2
-                }
-              }}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              endIcon={<SendIcon />}
-              onClick={() => handleSendMessage(false)}
-              disabled={isDmLoading || !dmInput.trim()}
-              sx={{ ml: 1, height: 55, borderRadius: 2, px: 3 }}
-            >
-              Send
-            </Button>
-          </Box>
-        </Box>
+        <DMChat 
+          messages={dmMessages}
+          dmInput={dmInput}
+          isDmLoading={isDmLoading}
+          onDmInputChange={handleDmInputChange}
+          onKeyPress={(e) => handleKeyPress(e, false)}
+          onSendMessage={() => handleSendMessage(false)}
+        />
       </Box>
+      
+      {/* Admin Dialog */}
+      <AdminDialog 
+        open={adminDialogOpen}
+        isLoading={adminActionLoading}
+        result={adminActionResult}
+        onClose={handleCloseAdminDialog}
+        onValidateGameData={handleValidateGameData}
+        onAutocreateReferences={handleAutocreateReferences}
+      />
       
       {/* Error Snackbar */}
       <Snackbar
