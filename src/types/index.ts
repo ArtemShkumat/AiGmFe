@@ -15,6 +15,8 @@ export interface GameSetting {
 export interface Game {
   gameId: string;
   name: string;
+  playerName: string;
+  playerLocation: string;
 }
 
 // Define PromptType enum to match backend
@@ -80,7 +82,7 @@ export interface PlayerInfo {
   relationships: any[];
   money: number;
   statusEffects: any[];
-  rpgElements: Record<string, Record<string, number | string> | number | string>;
+  rpgTags: Array<{name: string, description: string}>;
   activeQuests: any[];
   playerLog: any[];
   notes: string;

@@ -151,7 +151,19 @@ const TitlePage: React.FC = () => {
                   >
                     <ListItemText 
                       primary={game.name} 
-                      secondary={`Game ID: ${game.gameId}`}
+                      secondary={
+                        <>
+                          <Typography component="span" variant="body2" display="block">
+                            Character: {game.playerName}
+                          </Typography>
+                          <Typography component="span" variant="body2" display="block">
+                            Location: {game.playerLocation}
+                          </Typography>
+                          <Typography component="span" variant="body2" color="text.secondary" display="block">
+                            Game ID: {game.gameId}
+                          </Typography>
+                        </>
+                      }
                     />
                   </ListItemButton>
                 </ListItem>

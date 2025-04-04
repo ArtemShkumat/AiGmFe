@@ -5,7 +5,8 @@ import {
   Paper, 
   Divider, 
   Grid, 
-  IconButton 
+  IconButton,
+  Chip
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
@@ -66,33 +67,21 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({
                 <Divider sx={{ my: 2 }} />
                 
                 <Grid container spacing={2}>
-                  {Object.entries(playerInfo.rpgElements).map(([categoryName, categoryValue]) => (
-                    <Grid item xs={12} md={6} key={categoryName}>
-                      <Typography variant="h6" gutterBottom sx={{ textTransform: 'capitalize' }}>
-                        {categoryName}
-                      </Typography>
-                      
-                      {typeof categoryValue === 'object' ? (
-                        // If it's a nested object with more key-values
-                        Object.entries(categoryValue as Record<string, any>).map(([key, value]) => (
-                          <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                              {key}:
-                            </Typography>
-                            <Typography variant="body1">{value.toString()}</Typography>
-                          </Box>
-                        ))
-                      ) : (
-                        // If it's a direct value
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                            {categoryName}:
-                          </Typography>
-                          <Typography variant="body1">{categoryValue.toString()}</Typography>
-                        </Box>
-                      )}
-                    </Grid>
-                  ))}
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom>Character Tags</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                      {playerInfo.rpgTags.map((tag, index) => (
+                        <Chip
+                          key={index}
+                          label={tag.name}
+                          title={tag.description}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ m: 0.5 }}
+                        />
+                      ))}
+                    </Box>
+                  </Grid>
                 </Grid>
                 
                 <Divider sx={{ my: 2 }} />
